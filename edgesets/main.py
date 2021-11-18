@@ -2,11 +2,9 @@ from typing import Generator
 
 class GEdge:
     '''General Edge Abrastraction'''
-    def __init__(self, v, w, **kwargs):
+    def __init__(self, v, w, weight=1, **kwargs):
         self._edge = (v, w)
-
-        if 'weight' in kwargs:
-            self.weight = kwargs['weight']
+        self._weight = weight
 
     def __str__(self):
         return f"Edge <{self._edge}>"
@@ -37,23 +35,23 @@ class GEdge:
         for v in self._edge:
             yield v
 
+    @property
+    def weight(self):
+        return self._weight
+
+    @property
+    def w(self):
+        return self._weight
+
 
 class UEdge(GEdge):
-    '''Undirected Edge
-    The edges below are suppose to be equal
-        Edge<4, 5> == Edge <5, 4>
     '''
-    def __init__(self, v, u):
-        super().__init__(min(u,v), max(u, v))
-
-class UWEdge(GEdge):
-    '''Undirected Edge
+    Undirected Edge
     The edges below are suppose to be equal
-        Edge<4, 5> == Edge <5, 4>
+    Edge<4, 5> == Edge <5, 4>
     '''
-    def __init__(self, v, u, weight):
-        super().__init__(min(u,v), max(u, v), weight=weight)
-
+    def __init__(self, v, u, **kwargs):
+        super().__init__(min(u,v), max(u, v), **kwargs)
 
 class DEdge(GEdge):
     '''Directed Edge'''
@@ -66,10 +64,13 @@ class EdgeSet:
     def __init__(self,items=None):
         self._edges = set()
 
-        if items and isinstance(items, (list, tuple, set, Generator)):
-            for item in items:
-                u, v = item
-                self._edges.add(UEdge(v,u))
+        if items and isinstance(items, Generator):
+            items = [item for item in items]
+
+        if items and isinstance(items, (list, tuple, set)):
+            if not all(issubclass(item, GEdge) for item in items):
+                raise AttributeError("Some itens are not Edges")
+            self._edges = set(items)
         elif items and isinstance(items, self.__class__):
             self._edges = items._edges.copy()
 
