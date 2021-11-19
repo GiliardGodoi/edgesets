@@ -152,27 +152,16 @@ class EdgeSet:
                     done.add(vertice)
                     yield vertice
 
-    def __check_args(self, params):
-        u, v = None, None
-        if isinstance(params, (list, tuple)) and len(params) == 1:
-            params = params[0]
-        elif isinstance(params, (list, tuple)) and len(params) > 2:
-            raise ValueError(f"could not understand input f{params}")
-
-        if isinstance(params, UEdge):
-            return params
-        elif isinstance(params, (list, tuple)) and len(params) == 2 :
-            u, v = params
-        elif isinstance(params, set) and len(params) == 2:
-            u = params.pop()
-            v = params.pop()
+    def __check_args(self, param):
+        if issubclass(type(param), GEdge):
+            return param
         else:
-            raise ValueError(f"could not understand input f{params}")
+            raise ValueError(f"could not understand input f{param}")
 
         return UEdge(u, v)
 
-    def add(self, *args):
-        edge = self.__check_args(args)
+    def add(self, edge):
+        edge = self.__check_args(edge)
         self._edges.add(edge)
 
     def discard(self, *args):

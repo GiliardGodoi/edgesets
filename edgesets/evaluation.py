@@ -1,3 +1,4 @@
+from operator import attrgetter
 
 from disjointset import DisjointSet
 from .main import EdgeSet
@@ -5,11 +6,10 @@ from .main import EdgeSet
 class EvaluateEdgeSet:
     '''Evaluate an edgeset '''
 
-    def __init__(self, base_graph) :
-        self.GRAPH = base_graph
+    def __init__(self, func_weight=attrgetter('weight')) :
+        self.func_weight = func_weight
 
-
-    def __call__(self, chromosome, **kwargs):
+    def __call__(self, edgeset : EdgeSet):
         '''
         Parameters:
             chromosome : is a EdgeSet type or a Bag
@@ -20,20 +20,11 @@ class EvaluateEdgeSet:
             nro_components : int
                 graph components identified
         '''
-        assert isinstance(chromosome, EdgeSet), f"unsupported operation for chromosome type {type(chromosome)}"
+        assert isinstance(edgeset, EdgeSet), f"unsupported operation for chromosome type {type(edgeset)}"
 
-        disjointset = DisjointSet()
-        _cost = 0
-        GRAPH = self.GRAPH
+        total_cost = 0
+        for edge in edgeset:
+            cost = self.func_weight(edge)
+            total_cost += cost
 
-        for v ,u in chromosome:
-            if not GRAPH.has_edge(v, u):
-                raise RuntimeError("Graph instance has not this edge")
-            _cost += GRAPH.weight(v, u)
-            if v not in disjointset:
-                disjointset.make_set(v)
-            if u not in disjointset:
-                disjointset.make_set(u)
-            disjointset.union(v, u)
-
-        return _cost
+        return total_cost

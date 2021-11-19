@@ -1,120 +1,40 @@
-import unittest
-from os import path
 
-from ga4stpg.edgeset import EdgeSet
-from ga4stpg.edgeset.generate import gen_random_prim, gen_random_kruskal, gen_random_walk
-from ga4stpg.graph.reader import ReaderORLibrary
-from ga4stpg.graph.util import is_steiner_tree
-from ga4stpg.graph import UGraph
-
-class TestGenerateRadomPrimBased(unittest.TestCase):
-
-    def setUp(self):
-        filename = path.join('datasets', 'ORLibrary', 'steinb18.txt')
-        self.stpg  = ReaderORLibrary().parser(filename)
-
-    def test_returning_edge_set(self):
-        stpg = self.stpg
-        chromosome = gen_random_prim(stpg)
-        self.assertIsInstance(chromosome, EdgeSet)
-
-    def test_terminals_are_in(self):
-        stpg = self.stpg
-        terminals = set(stpg.terminals)
-        individual = gen_random_prim(stpg)
-        vertices = set([v for v in individual.vertices])
-
-        self.assertTrue(terminals.issubset(vertices))
-
-    def test_is_steiner_tree(self):
-        stpg = self.stpg
-
-        chromosome = gen_random_prim(stpg)
-        tree = UGraph()
-
-        for edge in chromosome:
-            v, u = edge
-            tree.add_edge(v, u)
-
-        _, response = is_steiner_tree(tree, stpg)
-        self.assertTrue(response['all_terminals_in'])
-        self.assertFalse(response['has_cycle'])
-        self.assertTrue(response['all_edges_are_reliable'])
-        self.assertTrue(response['graph_is_connected'])
-        # It is not possible to grant that 'all_leaves_are_terminals'
-
-class TestGenerateRadomKruskalBased(unittest.TestCase):
-
-    def setUp(self):
-        filename = path.join('datasets', 'ORLibrary', 'steinb18.txt')
-        self.stpg  = ReaderORLibrary().parser(filename)
-
-    def test_returning_edge_set(self):
-        stpg = self.stpg
-        chromosome = gen_random_kruskal(stpg)
-        self.assertIsInstance(chromosome, EdgeSet)
-
-    def test_terminals_are_in(self):
-        stpg = self.stpg
-        terminals = set(stpg.terminals)
-        individual = gen_random_kruskal(stpg)
-        vertices = set([v for v in individual.vertices])
-
-        self.assertTrue(terminals.issubset(vertices))
-
-    def test_is_steiner_tree(self):
-        stpg = self.stpg
-
-        chromosome = gen_random_kruskal(stpg)
-        tree = UGraph()
-
-        for edge in chromosome:
-            v, u = edge
-            tree.add_edge(v, u)
-
-        _, response = is_steiner_tree(tree, stpg)
-        self.assertTrue(response['all_terminals_in'])
-        self.assertFalse(response['has_cycle'])
-        self.assertTrue(response['all_edges_are_reliable'])
-        self.assertTrue(response['graph_is_connected'])
-        # It is not possible to grant that 'all_leaves_are_terminals'
+from disjointset.main import DisjointSet
+from edgesets import EdgeSet
+from edgesets.generate import GeneratePrimRST
+from ggraphs.graph import UndirectedGraph
 
 
-class TestGenerateRadoWalkBased(unittest.TestCase):
+def test_generating_by_prim_rst():
 
-    def setUp(self):
-        filename = path.join('datasets', 'ORLibrary', 'steinb18.txt')
-        self.stpg  = ReaderORLibrary().parser(filename)
+    # Kapsalis, 1993 inspired graph (added some edges)
+    ee = [(1, 2), (1, 3), (1, 4), (1, 7),
+          (2, 3), (2, 4), (2, 6), (2, 5),
+          (3, 4), (3, 7), (3, 6),
+          (4, 5), (4, 7),
+          (6, 7), (6, 5),
+          (7, 5)]
 
-    def test_returning_edge_set(self):
-        stpg = self.stpg
-        chromosome = gen_random_walk(stpg)
-        self.assertIsInstance(chromosome, EdgeSet)
+    graph = UndirectedGraph()
 
-    def test_terminals_are_in(self):
-        stpg = self.stpg
-        terminals = set(stpg.terminals)
-        individual = gen_random_walk(stpg)
-        vertices = set([v for v in individual.vertices])
+    for u, v in ee:
+        graph.add_edge(u, v)
 
-        self.assertTrue(terminals.issubset(vertices))
+    assert graph.has_edge(7, 3)
+    assert graph.has_edge(3, 2)
 
-    def test_is_steiner_tree(self):
-        stpg = self.stpg
+    generator = GeneratePrimRST(graph)
 
-        chromosome = gen_random_walk(stpg)
-        tree = UGraph()
+    tree = generator()
 
-        for edge in chromosome:
-            v, u = edge
-            tree.add_edge(v, u)
+    assert isinstance(tree, EdgeSet)
 
-        _, response = is_steiner_tree(tree, stpg)
-        self.assertTrue(response['all_terminals_in'])
-        self.assertFalse(response['has_cycle'])
-        self.assertTrue(response['all_edges_are_reliable'])
-        self.assertTrue(response['graph_is_connected'])
-        # It is not possible to grant that 'all_leaves_are_terminals'
+    ds = DisjointSet()
+    for v in graph.vertices: ds.make_set(v)
 
-if __name__ == "__main__" :
-    unittest.main()
+    for v, u in tree:
+        if ds.find(v) == ds.find(u):
+            raise RuntimeError('find a cycle')
+        ds.union(v, u)
+
+    assert len(ds.get_sets()) == 1, f"len -> {len(ds.get_sets())}"

@@ -1,110 +1,50 @@
-from random import sample
+import random
+from collections import defaultdict
+from itertools import chain
 
-from .main import EdgeSet
-from ggraphs import UndirectedGraph as UGraph
-from disjointset import DisjointSet
+from .main import EdgeSet, UEdge
+
 
 class CrossoverPrimRST:
 
-    def __init__(self, stpg):
-        self.stpg = stpg
+    def __init__(self, respetful=False):
+        self.respectful = respetful
 
-    def __call__(self, parent_a, parent_b):
-        assert isinstance(parent_a, EdgeSet), f'parent_a has to be EdgeSet type. Give was {type(parent_a)}'
-        assert isinstance(parent_b, EdgeSet), f'parent_b has to be EdgeSet type. Give was {type(parent_b)}'
-        stpg = self.stpg
-        terminals = set(stpg.terminals)
-        done = set()
-        result = EdgeSet()
+    def __call__(self, parent_blue : EdgeSet, parent_red : EdgeSet) -> EdgeSet:
+        assert isinstance(parent_blue, EdgeSet), f'parent_a has to be EdgeSet type. Give was {type(parent_blue)}'
+        assert isinstance(parent_red, EdgeSet), f'parent_b has to be EdgeSet type. Give was {type(parent_red)}'
 
-        subgraph = UGraph()
-        for edge in parent_a:
-            u, v = edge
-            subgraph.add_edge(u, v)
-        for edge in parent_b:
-            u, v = edge
-            subgraph.add_edge(u, v)
+        offspring = EdgeSet()
 
-        vi = terminals.pop()
-        done.add(vi)
+        adjacencies = defaultdict(set)
+        vertices = set()
+        # itertools chain returns all items from it1, and them from it2
+        for edge in chain(parent_red, parent_blue):
+            minor, major = edge
+            adjacencies[minor].add(edge)
+            if issubclass(type(edge), UEdge):
+                adjacencies[major].add(edge)
+            vertices.add(minor)
+            vertices.add(major)
 
-        candidates_edges = set()
-        for u in subgraph.adjacent_to(vi):
-            candidates_edges.add((vi, u))
+        vi = random.sample(vertices, k=1)[0]
+        vertices.remove(vi)
+        candidates = adjacencies[vi].copy()
 
-        while candidates_edges and terminals:
-            edge = sample(candidates_edges, k=1)[0]
-            v, w = edge
-            if w not in done:
-                done.add(w)
-                result.add(v, w)
-                terminals.discard(w)
-                for u in subgraph.adjacent_to(w):
-                    if u not in done: candidates_edges.add((w, u))
-            candidates_edges.discard((v, w))
+        while candidates:
+            edge = random.sample(candidates, k=1)[0]
+            minor, major = edge
 
-        return result
+            if (minor in vertices) or (major in vertices):
+                offspring.add(edge)
+                vf = major if major in vertices else minor
+                adj = adjacencies[vf].difference(set(edge))
+                candidates.update(adj)
+                vertices.discard(minor)
+                vertices.discard(major)
 
-
-class CrossoverKruskalRST:
-
-    def __init__(self, stpg):
-        self.stpg = stpg
-
-    def __call__(self, parent_a, parent_b):
-        assert isinstance(parent_a, EdgeSet), f'parent_a has to be EdgeSet type. Give was {type(parent_a)}'
-        assert isinstance(parent_b, EdgeSet), f'parent_b has to be EdgeSet type. Give was {type(parent_b)}'
-
-        edges = parent_a | parent_b
-
-        done = DisjointSet()
-        for v in edges.vertices:
-            done.make_set(v)
-
-        edges = set(edges)
-
-        result = EdgeSet()
-        while edges and len(done.get_disjoint_sets()) > 1:
-            edge = sample(edges, k=1)[0]
-            y, z = edge[0], edge[1]
-            if done.find(y) != done.find(z):
-                result.add(edge)
-                done.union(y, z)
-            edges.discard(edge)
-
-        return result
+            candidates.remove(edge)
 
 
-class CrossoverRandomWalkRST:
 
-    def __init__(self, stpg):
-        self.stpg = stpg
-
-    def __call__(self, parent_a, parent_b):
-        assert isinstance(parent_a, EdgeSet), f'parent_a has to be EdgeSet type. Give was {type(parent_a)}'
-        assert isinstance(parent_b, EdgeSet), f'parent_b has to be EdgeSet type. Give was {type(parent_b)}'
-        stpg = self.stpg
-        terminals = set(stpg.terminals)
-
-        subgraph = UGraph()
-        for edge in parent_a:
-            u, v = edge
-            subgraph.add_edge(u, v)
-        for edge in parent_b:
-            u, v = edge
-            subgraph.add_edge(u, v)
-
-        done   = set()
-        result = EdgeSet()
-
-        v = terminals.pop()
-        while terminals:
-            done.add(v)
-            adjacents = subgraph.adjacent_to(v, lazy=False)
-            u = sample(adjacents, k=1)[0]
-            if u not in done:
-                result.add(v, u)
-            terminals.discard(u)
-            v = u
-
-        return result
+        return offspring
