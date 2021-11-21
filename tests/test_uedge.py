@@ -4,7 +4,7 @@ from edgesets import UEdge, DEdge
 def test_repr():
     e1 = UEdge(4, 3)
     text = repr(e1)
-    assert text == "UEdge(3, 4)"
+    assert text == "UEdge(3, 4, weight=1)"
 
     e2 = eval(text)
     assert type(e1) == type(e1)
