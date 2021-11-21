@@ -1,19 +1,26 @@
+
+import operator
+import functools
+
 from typing import Generator
 
 class GEdge:
     '''General Edge Abrastraction'''
-    def __init__(self, v, w, weight=1, **kwargs):
-        self._edge = (v, w)
+    def __init__(self, u, v, weight=1, **kwargs):
+        self._edge = (u, v)
         self._weight = weight
 
     def __str__(self):
-        return f"Edge <{self._edge}>"
+        return repr(self)
 
     def __repr__(self):
-        return f"Edge <{self._edge}>"
+        cls = type(self).__name__
+        return f"{cls}{self._edge}"
 
     def __hash__(self):
-        return hash(self._edge)
+        cls = type(self).__name__
+        hashes = [hash(cls), hash(self._edge)]
+        return functools.reduce(operator.xor, hashes, 0)
 
     def __contains__(self, vertice):
         return vertice in self._edge
@@ -25,10 +32,15 @@ class GEdge:
         return self._edge[key]
 
     def __len__(self):
+        return len(self._edge)
+
+    def __abs__(self):
         return self._weight
 
     def __eq__(self, other):
-        return self._edge == other._edge
+        return (type(self) == type(other) and
+                    self._edge == other._edge and
+                    self.weight == other.weight )
 
     @property
     def vertices(self):
