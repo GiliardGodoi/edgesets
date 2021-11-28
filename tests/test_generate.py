@@ -97,3 +97,17 @@ def test_generate_many_individuals_with_kruskalrst_and_b18_graph(b18graph):
     population = [ generator() for _ in range(100)]
 
     assert len(population) == 100
+
+def test_generate_one_individual_with_random_walk_and_ugraph(ugraph):
+    generator = RandomWalkSTGenerator(ugraph)
+    suite_for_one_individual(ugraph, generator)
+
+def test_generate_one_individual_with_random_walk_and_b18_graph(b18graph):
+    generator =RandomWalkSTGenerator(b18graph)
+    suite_for_one_individual(b18graph, generator)
+
+def test_generate_many_individuals_with_random_walk_and_b18_graph(b18graph):
+    generator = RandomWalkSTGenerator(b18graph)
+    population = [ generator() for _ in range(100)]
+
+    assert len(population) == 100

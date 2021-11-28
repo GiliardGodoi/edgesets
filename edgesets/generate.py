@@ -75,3 +75,32 @@ class KruskalRSTGenerator:
                 vertices.union(v, u)
 
         return offspring
+
+
+class RandomWalkSTGenerator:
+
+    def __init__(self, graph, directed=False):
+        self.graph = graph
+        if directed:
+            self.EdgeClass = DEdge
+        else:
+            self.EdgeClass = UEdge
+
+    def __call__(self):
+        vertices = set(self.graph.vertices)
+        v_init = random.choice(list(vertices))
+        vertices.remove(v_init)
+
+        def done(node):
+            return node not in vertices
+        offspring = EdgeSet()
+        v = v_init
+        while len(vertices):
+            adjacents = list(self.graph.adjacent_to(v))
+            u = random.choice(adjacents)
+            if not done(u):
+                offspring.add(self.EdgeClass(v, u))
+                vertices.remove(u)
+            v = u
+
+        return offspring
