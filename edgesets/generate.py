@@ -1,5 +1,7 @@
 
 import random
+
+from disjointset.main import DisjointSet
 from .main import DEdge, EdgeSet, UEdge
 
 class GeneratePrimRST:
@@ -45,5 +47,31 @@ class GeneratePrimRST:
                 # discard by the end
                 vertices.discard(x)
                 vertices.discard(y)
+
+        return offspring
+
+class KruskalRSTGenerator:
+
+    def __init__(self, graph, directed=False):
+        self.graph = graph
+        self.edges = [ (v, u) for v, u in graph.edges]
+
+        if directed:
+            self.EdgeClass = DEdge
+        else:
+            self.EdgeClass = UEdge
+
+    def __call__(self):
+        offspring = EdgeSet()
+        vertices = DisjointSet()
+
+        for v in self.graph.vertices: vertices.make_set(v)
+
+        random.shuffle(self.edges)
+        for edge in self.edges:
+            v, u = edge
+            if vertices.find(v) != vertices.find(u):
+                offspring.add(self.EdgeClass(v,u))
+                vertices.union(v, u)
 
         return offspring
