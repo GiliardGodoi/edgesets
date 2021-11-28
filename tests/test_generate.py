@@ -1,8 +1,12 @@
+import os
 import pytest
+import requests
+import tempfile
 from disjointset.main import DisjointSet
 from edgesets import EdgeSet
 from edgesets.generate import GeneratePrimRST, KruskalRSTGenerator
-from ggraphs.graph import UndirectedGraph
+from ggraphs.graph import UndirectedGraph, UndirectedWeightedGraph
+from ggraphs.steiner.parser import ParserORLibrary
 
 
 @pytest.fixture
@@ -37,41 +41,59 @@ def ugraph():
 
     return graph
 
+@pytest.fixture
+def b18graph():
+    url = "https://raw.githubusercontent.com/GiliardGodoi/ppgi-stpg-gpx/master/datasets/ORLibrary/steinc18.txt"
+    response = requests.get(url)
+    content = response.content
+    parser = ParserORLibrary()
 
-def test_generating_by_prim_rst(ugraph):
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", delete=False) as file :
+        file.write(content.decode('utf-8'))
+        if not os.path.exists(file.name) :
+            raise FileNotFoundError('algo estranho aqui')
+        stpg = parser.parse(file.name)
 
+    return stpg.graph
+
+
+def suite_for_one_individual(graph, generator):
+
+    tree = generator()
+
+    assert isinstance(tree, EdgeSet)
+    assert not tree.is_empty(), "tree shouldn't be empty"
+
+    ds = DisjointSet()
+    for v in graph.vertices:
+        ds.make_set(v)
+
+    for v, u in tree:
+        if ds.find(v) == ds.find(u):
+            raise RuntimeError("find a cycle")
+        ds.union(v, u)
+
+    assert len(ds.get_sets()) == 1, f"len -> {len(ds.get_sets())}"
+
+def test_generate_one_individual_with_primrst_and_ugraph(ugraph):
     generator = GeneratePrimRST(ugraph)
+    suite_for_one_individual(ugraph, generator)
 
-    tree = generator()
+def test_generate_one_individual_with_primrst_and_b18_graph(b18graph):
+    generator = GeneratePrimRST(b18graph)
+    suite_for_one_individual(b18graph, generator)
 
-    assert isinstance(tree, EdgeSet)
-    assert not tree.is_empty(), "tree shouldn't be empty"
-
-    ds = DisjointSet()
-    for v in ugraph.vertices:
-        ds.make_set(v)
-
-    for v, u in tree:
-        if ds.find(v) == ds.find(u):
-            raise RuntimeError("find a cycle")
-        ds.union(v, u)
-
-    assert len(ds.get_sets()) == 1, f"len -> {len(ds.get_sets())}"
-
-def test_generating_by_kruskalrst(ugraph):
-
+def test_generate_one_individual_with_kruskalrst_and_ugraph(ugraph):
     generator = KruskalRSTGenerator(ugraph)
-    tree = generator()
-    assert isinstance(tree, EdgeSet)
-    assert not tree.is_empty(), "tree shouldn't be empty"
+    suite_for_one_individual(ugraph, generator)
 
-    ds = DisjointSet()
-    for v in ugraph.vertices:
-        ds.make_set(v)
+def test_generate_one_individual_with_kruskalrst_and_b18_graph(b18graph):
+    generator = KruskalRSTGenerator(b18graph)
+    suite_for_one_individual(b18graph, generator)
 
-    for v, u in tree:
-        if ds.find(v) == ds.find(u):
-            raise RuntimeError("find a cycle")
-        ds.union(v, u)
+def test_generate_many_individuals_with_kruskalrst_and_b18_graph(b18graph):
+    generator = KruskalRSTGenerator(b18graph)
 
-    assert len(ds.get_sets()) == 1, f"len -> {len(ds.get_sets())}"
+    population = [ generator() for _ in range(100)]
+
+    assert len(population) == 100
