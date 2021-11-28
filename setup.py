@@ -11,6 +11,11 @@ setup(
     url='https://github.com/GiliardGodoi/edgesets',
     license='MIT License',
     packages=find_packages(),
+    dependency_links=[
+        "git+https://github.com/GiliardGodoi/disjointset",
+        "git+https://github.com/GiliardGodoi/pqueue",
+        "git+https://github.com/GiliardGodoi/ggraphs"
+    ],
     classifiers=['Intended Audience :: Developers',
                  'Intended Audience :: Science/Research',
                  'Topic :: Scientific/Engineering',
