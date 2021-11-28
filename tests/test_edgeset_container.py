@@ -29,7 +29,7 @@ def gen_values(w):
 
 
 @pytest.mark.parametrize(
-    "n_edges, directed, weighted",
+    "n_items, directed, weighted",
     [(100, True, True), (100, True, False),
      (100, False, True), (100, False, False)]
 )
