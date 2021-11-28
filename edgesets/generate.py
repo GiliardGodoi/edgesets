@@ -4,7 +4,7 @@ import random
 from disjointset.main import DisjointSet
 from .main import DEdge, EdgeSet, UEdge
 
-class GeneratePrimRST:
+class PrimRSTGenerator:
 
     def __init__(self, graph, directed=False):
         self.graph = graph

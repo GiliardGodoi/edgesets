@@ -4,8 +4,8 @@ import requests
 import tempfile
 from disjointset.main import DisjointSet
 from edgesets import EdgeSet
-from edgesets.generate import GeneratePrimRST, KruskalRSTGenerator
-from ggraphs.graph import UndirectedGraph, UndirectedWeightedGraph
+from edgesets.generate import PrimRSTGenerator, KruskalRSTGenerator, RandomWalkSTGenerator
+from ggraphs.graph import UndirectedGraph
 from ggraphs.steiner.parser import ParserORLibrary
 
 
@@ -76,11 +76,11 @@ def suite_for_one_individual(graph, generator):
     assert len(ds.get_sets()) == 1, f"len -> {len(ds.get_sets())}"
 
 def test_generate_one_individual_with_primrst_and_ugraph(ugraph):
-    generator = GeneratePrimRST(ugraph)
+    generator = PrimRSTGenerator(ugraph)
     suite_for_one_individual(ugraph, generator)
 
 def test_generate_one_individual_with_primrst_and_b18_graph(b18graph):
-    generator = GeneratePrimRST(b18graph)
+    generator = PrimRSTGenerator(b18graph)
     suite_for_one_individual(b18graph, generator)
 
 def test_generate_one_individual_with_kruskalrst_and_ugraph(ugraph):
