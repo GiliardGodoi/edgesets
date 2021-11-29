@@ -116,3 +116,18 @@ def test_edges_should_not_contains_numeric_node(EdgeClass):
     edges = [EdgeClass(*nodes, weight=w) for nodes, w in zip(values, weigthes)]
 
     assert all(w not in e for e, w in zip(edges, weigthes))
+
+
+@pytest.mark.parametrize(
+    'EdgeClass',
+    [GEdge, UEdge, DEdge]
+)
+def test_edge_unpacking(EdgeClass):
+
+    edge = EdgeClass("A", "D", weight=50)
+
+    v, u = edge
+
+    assert v == "A"
+    assert u == "D"
+    assert edge.weight == 50
