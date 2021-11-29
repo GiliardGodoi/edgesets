@@ -1,11 +1,15 @@
 import os
+import statistics
+import tempfile
+
 import pytest
 import requests
-import tempfile
 from disjointset.main import DisjointSet
 from edgesets import EdgeSet
-from edgesets.generate import PrimRSTGenerator, KruskalRSTGenerator, RandomWalkSTGenerator
-from ggraphs.graph import UndirectedGraph
+from edgesets.evaluation import EvaluateEdgeSet
+from edgesets.generate import (KruskalRSTGenerator, PrimRSTGenerator,
+                               RandomWalkSTGenerator)
+from ggraphs.graph import UndirectedWeightedGraph
 from ggraphs.steiner.parser import ParserORLibrary
 
 
@@ -31,10 +35,10 @@ def ugraph():
         (7, 5),
     ]
 
-    graph = UndirectedGraph()
+    graph = UndirectedWeightedGraph()
 
     for u, v in edges:
-        graph.add_edge(u, v)
+        graph.add_edge(u, v, weight=1)
 
     assert graph.has_edge(7, 3)
     assert graph.has_edge(3, 2)
@@ -75,39 +79,58 @@ def suite_for_one_individual(graph, generator):
 
     assert len(ds.get_sets()) == 1, f"len -> {len(ds.get_sets())}"
 
+def suite_for_many_individuals(generator):
+
+    evaluator = EvaluateEdgeSet()
+    population = [ generator() for _ in range(100)]
+    fitness = [ evaluator(p) for p in population]
+
+    assert len(population) == 100
+    assert statistics.stdev(fitness) != 0.0
+
+
 def test_generate_one_individual_with_primrst_and_ugraph(ugraph):
     generator = PrimRSTGenerator(ugraph)
     suite_for_one_individual(ugraph, generator)
+
 
 def test_generate_one_individual_with_primrst_and_b18_graph(b18graph):
     generator = PrimRSTGenerator(b18graph)
     suite_for_one_individual(b18graph, generator)
 
+
+def test_generate_many_individuals_with_primrst_and_b18_graph(b18graph):
+    generator = PrimRSTGenerator(b18graph)
+
+    suite_for_many_individuals(generator)
+
+
 def test_generate_one_individual_with_kruskalrst_and_ugraph(ugraph):
     generator = KruskalRSTGenerator(ugraph)
     suite_for_one_individual(ugraph, generator)
+
 
 def test_generate_one_individual_with_kruskalrst_and_b18_graph(b18graph):
     generator = KruskalRSTGenerator(b18graph)
     suite_for_one_individual(b18graph, generator)
 
+
 def test_generate_many_individuals_with_kruskalrst_and_b18_graph(b18graph):
-    generator = KruskalRSTGenerator(b18graph)
+    suite_for_many_individuals(KruskalRSTGenerator(b18graph))
 
-    population = [ generator() for _ in range(100)]
-
-    assert len(population) == 100
 
 def test_generate_one_individual_with_random_walk_and_ugraph(ugraph):
     generator = RandomWalkSTGenerator(ugraph)
     suite_for_one_individual(ugraph, generator)
 
+
 def test_generate_one_individual_with_random_walk_and_b18_graph(b18graph):
     generator =RandomWalkSTGenerator(b18graph)
     suite_for_one_individual(b18graph, generator)
 
-def test_generate_many_individuals_with_random_walk_and_b18_graph(b18graph):
-    generator = RandomWalkSTGenerator(b18graph)
-    population = [ generator() for _ in range(100)]
 
-    assert len(population) == 100
+def test_generate_many_individuals_with_random_walk_and_b18_graph(b18graph):
+
+    suite_for_many_individuals(RandomWalkSTGenerator(b18graph))
+
+
