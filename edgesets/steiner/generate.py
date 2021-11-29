@@ -5,76 +5,87 @@ from ggraphs.steiner.parser import SteinerTreeProblem
 
 from .main import EdgeSet
 
+class RandomWalkRSTBased:
 
-def gen_random_kruskal(stpg : SteinerTreeProblem):
+    def __init__(self, stpg):
+        self.stpg = stpg
 
-    terminals = set(stpg.terminals)
-    edges = [(u, v) for u, v in stpg.graph.gen_undirect_edges()]
-    shuffle(edges)
+    def __call__(self) -> EdgeSet:
+        terminals = set(self.stpg.terminals)
+        edges = [(u, v) for u, v in self.stpg.graph.gen_undirect_edges()]
+        shuffle(edges)
 
-    done = DisjointSet()
-    for v in terminals:
-        done.make_set(v)
+        done = DisjointSet()
+        for v in terminals:
+            done.make_set(v)
 
-    result = EdgeSet()
+        individual = EdgeSet()
 
-    while edges and len(done.get_disjoint_sets()) > 1:
-        edge = edges.pop()
-        y, z = edge[0], edge[1]
-        if y not in done: done.make_set(y)
-        if z not in done: done.make_set(z)
-        if done.find(y) != done.find(z):
-            result.add(y, z)
-            done.union(y, z)
-            terminals.discard(y)
-            terminals.discard(z)
+        while edges and len(done.get_disjoint_sets()) > 1:
+            edge = edges.pop()
+            y, z = edge[0], edge[1]
+            if y not in done: done.make_set(y)
+            if z not in done: done.make_set(z)
+            if done.find(y) != done.find(z):
+                individual.add(y, z)
+                done.union(y, z)
+                terminals.discard(y)
+                terminals.discard(z)
 
-    return result
+        return individual
 
-def gen_random_prim(stpg : SteinerTreeProblem):
+class PrimRSTBased:
 
-    terminals = set(stpg.terminals)
-    graph = stpg.graph
+    def __init__(self, stpg : SteinerTreeProblem):
+        self.stpg = stpg
 
-    vi = sample(range(1, stpg.nro_nodes + 1), k=1)[0]
+    def __call__(self):
 
-    done   = set()
-    edges  = set()
-    result = EdgeSet()
+        terminals = set(self.stpg.terminals)
+        graph = self.stpg.graph
 
-    done.add(vi)
-    terminals.discard(vi)
-    for w in graph.adjacent_to(vi):
-        edges.add((vi, w))
+        vi = sample(range(1, self.stpg.nro_nodes + 1), k=1)[0]
 
-    while edges and terminals:
-        edge = sample(edges, k=1)[0]
-        v, w = edge
-        if w not in done:
-            done.add(w)
-            result.add(v, w)
-            terminals.discard(w)
-            for u in graph.adjacent_to(w):
-                if u not in done: edges.add((w, u))
-        edges.discard((v, w))
+        done   = set()
+        edges  = set()
+        result = EdgeSet()
 
-    return result
+        done.add(vi)
+        terminals.discard(vi)
+        for w in graph.adjacent_to(vi):
+            edges.add((vi, w))
 
-def gen_random_walk(stpg : SteinerTreeProblem):
+        while edges and terminals:
+            edge = sample(edges, k=1)[0]
+            v, w = edge
+            if w not in done:
+                done.add(w)
+                result.add(v, w)
+                terminals.discard(w)
+                for u in graph.adjacent_to(w):
+                    if u not in done: edges.add((w, u))
+            edges.discard((v, w))
 
-    graph = stpg.graph
-    terminals = set(stpg.terminals)
-    result = EdgeSet()
-    done = set()
+        return result
 
-    v = terminals.pop()
-    while terminals:
-        done.add(v)
-        adjacents = graph.adjacent_to(v, lazy=False)
-        u = sample(adjacents, k=1)[0]
-        if u not in done:
-            result.add(v, u)
-        terminals.discard(u)
-        v = u
+class RandomWalkBased:
 
-    return result
+    def __init__(self, stpg: SteinerTreeProblem):
+        self.stpg = stpg
+
+    def __call__(self):
+        graph = self.stpg.graph
+        terminals = set(self.stpg.terminals)
+        result = EdgeSet()
+        done = set()
+
+        v = terminals.pop()
+        while terminals:
+            done.add(v)
+            adjacents = graph.adjacent_to(v, lazy=False)
+            u = sample(adjacents, k=1)[0]
+            if u not in done:
+                result.add(v, u)
+            terminals.discard(u)
+            v = u
+        return result
