@@ -9,7 +9,7 @@ class EvaluateEdgeSet:
     def __init__(self, func_weight=attrgetter('weight')) :
         self.func_weight = func_weight
 
-    def __call__(self, edgeset : EdgeSet):
+    def __call__(self, individual : EdgeSet):
         '''
         Parameters:
             chromosome : is a EdgeSet type or a Bag
@@ -20,10 +20,10 @@ class EvaluateEdgeSet:
             nro_components : int
                 graph components identified
         '''
-        assert isinstance(edgeset, EdgeSet), f"unsupported operation for chromosome type {type(edgeset)}"
+        assert isinstance(individual, EdgeSet), f"unsupported operation for chromosome type {type(individual)}"
 
         total_cost = 0
-        for edge in edgeset:
+        for edge in individual:
             cost = self.func_weight(edge)
             total_cost += cost
 
