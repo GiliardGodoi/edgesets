@@ -29,7 +29,8 @@ class PrimRSTGenerator:
 
         candidates = set()
         for u in adjacents(vi):
-            candidates.add(self.EdgeClass(vi, u))
+            weight = self.graph.weight(vi, u)
+            candidates.add(self.EdgeClass(vi, u, weight=weight))
 
         offspring = EdgeSet()
         while candidates:
@@ -40,7 +41,8 @@ class PrimRSTGenerator:
                 offspring.add(edge)
                 vf = y if done(x) else x
                 for u in adjacents(vf):
-                    new_edge = self.EdgeClass(vf, u)
+                    weight = self.graph.weight(vf, u)
+                    new_edge = self.EdgeClass(vf, u, weight=weight)
                     if new_edge == edge:
                         continue
                     candidates.add(new_edge)
@@ -71,7 +73,8 @@ class KruskalRSTGenerator:
         for edge in self.edges:
             v, u = edge
             if vertices.find(v) != vertices.find(u):
-                offspring.add(self.EdgeClass(v,u))
+                weight = self.graph.weight(v,u)
+                offspring.add(self.EdgeClass(v,u, weight=weight))
                 vertices.union(v, u)
 
         return offspring
@@ -99,7 +102,8 @@ class RandomWalkSTGenerator:
             adjacents = list(self.graph.adjacent_to(v))
             u = random.choice(adjacents)
             if not done(u):
-                offspring.add(self.EdgeClass(v, u))
+                weight = self.graph.weight(v, u)
+                offspring.add(self.EdgeClass(v, u, weight=weight))
                 vertices.remove(u)
             v = u
 
